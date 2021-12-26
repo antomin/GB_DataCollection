@@ -13,7 +13,6 @@
 
 import requests
 from bs4 import BeautifulSoup
-from pprint import pprint
 
 
 def salary_parser(sal_str):
@@ -30,7 +29,6 @@ def salary_parser(sal_str):
 
 position = 'python'
 url = 'https://hh.ru/search/vacancy'
-
 params = {
     'text': position,
     'customDomain': 1,
@@ -40,32 +38,37 @@ headers = {
     'User-Agent':
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'
 }
-response = requests.get(url, params=params, headers=headers)
-
-soup = BeautifulSoup(response.text, 'html.parser')
-
-vacancies = soup.select('.vacancy-serp-item__row_header')
 vacancies_list = []
-for vacancy in vacancies:
-    vacancy_data = {}
-    info = vacancy.find('a', {'class': 'bloko-link'})
-    salary_src = vacancy.find('span', {'data-qa': 'vacancy-serp__vacancy-compensation'})
-    href = info['href']
-    site = 'hh.ru'
-    sub_vacancy = vacancy.find_next_sibling('div')
-    employer = sub_vacancy.find('a')
-    location = sub_vacancy.find('div', {'data-qa': 'vacancy-serp__vacancy-address'})
 
-    vacancy_data['name'] = info.text
-    salary = salary_parser(salary_src)
-    vacancy_data['salary_min'] = salary[0]
-    vacancy_data['salary_max'] = salary[1]
-    vacancy_data['salary_currency'] = salary[2]
-    vacancy_data['href'] = href.split('?')[0]
-    vacancy_data['site_vacancy'] = site
-    vacancy_data['employer'] = employer.text.replace('\xa0', ' ')
-    vacancy_data['location'] = location.text  # .split(',')[0]
+while True:
+    response = requests.get(url, params=params, headers=headers)
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-    vacancies_list.append(vacancy_data)
+    if not soup.find('a', {'data-qa': 'pager-next'}):
+        break
 
-pprint(vacancies_list)
+    vacancies = soup.select('.vacancy-serp-item__row_header')
+
+    for vacancy in vacancies:
+        vacancy_data = {}
+        info = vacancy.find('a', {'class': 'bloko-link'})
+        salary_src = vacancy.find('span', {'data-qa': 'vacancy-serp__vacancy-compensation'})
+        href = info['href']
+        site = 'hh.ru'
+        sub_vacancy = vacancy.find_next_sibling('div')
+        employer = sub_vacancy.find('a')
+        location = sub_vacancy.find('div', {'data-qa': 'vacancy-serp__vacancy-address'})
+
+        vacancy_data['name'] = info.text
+        salary = salary_parser(salary_src)
+        vacancy_data['salary_min'] = salary[0]
+        vacancy_data['salary_max'] = salary[1]
+        vacancy_data['salary_currency'] = salary[2]
+        vacancy_data['href'] = href.split('?')[0]
+        vacancy_data['site_vacancy'] = site
+        vacancy_data['employer'] = employer.text.replace('\xa0', ' ')
+        vacancy_data['location'] = location.text
+
+        vacancies_list.append(vacancy_data)
+
+    params['page'] += 1
