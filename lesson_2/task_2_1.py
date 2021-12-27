@@ -13,13 +13,20 @@
 
 import requests
 from bs4 import BeautifulSoup
+from pprint import pprint
+import json
 
 
 def salary_parser(sal_str):
-    if sal_str is None:
+    if sal_str is None or sal_str.text[0] == 'П':
         return [None, None, None]
-    sal_lst = sal_str.text.replace('\u202f', '').replace(' –', '').split(' ')
-    if sal_lst[0] == 'от':
+    sal_lst = sal_str.text.replace('\u202f', '').replace('\xa0', ' ').replace(' –', '').replace(' —', '').split(' ')
+    for idx, el in enumerate(sal_lst):
+        if el == '000':
+            sal_lst[idx - 1] = sal_lst[idx - 1] + sal_lst.pop(idx)
+    if len(sal_lst) == 2:
+        return [int(sal_lst[0]), int(sal_lst[0]), sal_lst[1]]
+    elif sal_lst[0] == 'от':
         return [int(sal_lst[1]), None, sal_lst[2]]
     elif sal_lst[0] == 'до':
         return [None, int(sal_lst[1]), sal_lst[2]]
@@ -27,12 +34,30 @@ def salary_parser(sal_str):
         return [int(sal_lst[0]), int(sal_lst[1]), sal_lst[2]]
 
 
+def vacancy_data_constructor(name, sal, hrf, site, empl, loc):
+    salary = salary_parser(sal)
+    return {'name': name.text,
+            'salary_min': salary[0],
+            'salary_max': salary[1],
+            'salary_currency': salary[2],
+            'href': hrf,
+            'site_vacancy': site,
+            'employer': empl.text if empl is not None else None,
+            'location': loc
+            }
+
+
 position = 'python'
-url = 'https://hh.ru/search/vacancy'
-params = {
+url_hh = 'https://hh.ru/search/vacancy'
+url_sj = 'https://russia.superjob.ru'
+params_hh = {
     'text': position,
     'customDomain': 1,
-    'page': 0
+    'page': 38 # ПОПРАВИТЬ НА 0!!!!
+}
+params_sj = {
+    'keywords': position,
+    'page': 3  # ПОПРАВИТЬ НА 1!!!!
 }
 headers = {
     'User-Agent':
@@ -40,8 +65,9 @@ headers = {
 }
 vacancies_list = []
 
+# HeadHunter
 while True:
-    response = requests.get(url, params=params, headers=headers)
+    response = requests.get(url_hh, params=params_hh, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
 
     if not soup.find('a', {'data-qa': 'pager-next'}):
@@ -50,25 +76,42 @@ while True:
     vacancies = soup.select('.vacancy-serp-item__row_header')
 
     for vacancy in vacancies:
-        vacancy_data = {}
         info = vacancy.find('a', {'class': 'bloko-link'})
         salary_src = vacancy.find('span', {'data-qa': 'vacancy-serp__vacancy-compensation'})
-        href = info['href']
-        site = 'hh.ru'
+        href = info['href'].split('?')[0]
         sub_vacancy = vacancy.find_next_sibling('div')
         employer = sub_vacancy.find('a')
-        location = sub_vacancy.find('div', {'data-qa': 'vacancy-serp__vacancy-address'})
+        location = sub_vacancy.find('div', {'data-qa': 'vacancy-serp__vacancy-address'}).text
 
-        vacancy_data['name'] = info.text
-        salary = salary_parser(salary_src)
-        vacancy_data['salary_min'] = salary[0]
-        vacancy_data['salary_max'] = salary[1]
-        vacancy_data['salary_currency'] = salary[2]
-        vacancy_data['href'] = href.split('?')[0]
-        vacancy_data['site_vacancy'] = site
-        vacancy_data['employer'] = employer.text.replace('\xa0', ' ')
-        vacancy_data['location'] = location.text
+        vacancies_list.append(vacancy_data_constructor(info, salary_src, href, 'hh.ru', employer, location))
 
-        vacancies_list.append(vacancy_data)
+    params_hh['page'] += 1
 
-    params['page'] += 1
+# SuperJob
+while True:
+    response = requests.get(url_sj + '/vacancy/search', params=params_sj, headers=headers)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    if not soup.find('a', {'class': 'f-test-button-dalshe'}):
+        break
+
+    vacancies = soup.select('.jNMYr.GPKTZ._1tH7S')
+
+    for vacancy in vacancies:
+        info = vacancy.find('a')
+        salary_src = vacancy.find('span', {'class': '_2Wp8I _3a-0Y _3DjcL _1tCB5 _3fXVo'})
+        href = url_sj + vacancy.find('a')['href']
+        sub_vacancy = vacancy.find_next_sibling('div')
+        employer = sub_vacancy.find('a')
+        location = sub_vacancy.find('span', {'class': 'f-test-text-company-item-location'}).text.split(' ')[-1]
+
+        vacancies_list.append(vacancy_data_constructor(info, salary_src, href, 'superjob.ru', employer, location))
+
+    params_sj['page'] += 1
+
+pprint(vacancies_list)
+
+with open('vacancies.json', 'w', encoding='utf-8') as json_file:
+    json.dump(vacancies_list, json_file, ensure_ascii=False)
+
+
