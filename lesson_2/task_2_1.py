@@ -13,8 +13,8 @@
 
 import requests
 from bs4 import BeautifulSoup
-from pprint import pprint
 import json
+import pandas
 
 
 def salary_parser(sal_str):
@@ -53,11 +53,11 @@ url_sj = 'https://russia.superjob.ru'
 params_hh = {
     'text': position,
     'customDomain': 1,
-    'page': 38 # ПОПРАВИТЬ НА 0!!!!
+    'page': 0
 }
 params_sj = {
     'keywords': position,
-    'page': 3  # ПОПРАВИТЬ НА 1!!!!
+    'page': 1
 }
 headers = {
     'User-Agent':
@@ -109,9 +109,11 @@ while True:
 
     params_sj['page'] += 1
 
-pprint(vacancies_list)
 
 with open('vacancies.json', 'w', encoding='utf-8') as json_file:
     json.dump(vacancies_list, json_file, ensure_ascii=False)
 
 
+df = pandas.DataFrame(vacancies_list)
+pandas.set_option("display.max_colwidth", 20)
+print(df)
