@@ -15,6 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import pandas
+from pymongo import MongoClient
 
 
 def salary_parser(sal_str):
@@ -34,17 +35,20 @@ def salary_parser(sal_str):
         return [int(sal_lst[0]), int(sal_lst[1]), sal_lst[2]]
 
 
-def vacancy_data_constructor(name, sal, hrf, site, empl, loc):
+def vacancy_data_constructor(name, sal, hrf, site, empl, loc, v_id):
     salary = salary_parser(sal)
-    return {'name': name.text,
-            'salary_min': salary[0],
-            'salary_max': salary[1],
-            'salary_currency': salary[2],
-            'href': hrf,
-            'site_vacancy': site,
-            'employer': empl.text if empl is not None else None,
-            'location': loc
-            }
+    vacancy_data = {'_id': v_id,
+                    'name': name.text,
+                    'salary_min': salary[0],
+                    'salary_max': salary[1],
+                    'salary_currency': salary[2],
+                    'href': hrf,
+                    'site_vacancy': site,
+                    'employer': empl.text if empl is not None else None,
+                    'location': loc
+                    }
+
+    collection.insert_one(vacancy_data)
 
 
 position = 'python'
@@ -65,6 +69,11 @@ headers = {
 }
 vacancies_list = []
 
+# db params
+client = MongoClient('127.0.0.1', 27017)
+db = client['vacancies']
+collection = db.all_vacancies
+
 # HeadHunter
 while True:
     response = requests.get(url_hh, params=params_hh, headers=headers)
@@ -82,8 +91,8 @@ while True:
         sub_vacancy = vacancy.find_next_sibling('div')
         employer = sub_vacancy.find('a')
         location = sub_vacancy.find('div', {'data-qa': 'vacancy-serp__vacancy-address'}).text
-
-        vacancies_list.append(vacancy_data_constructor(info, salary_src, href, 'hh.ru', employer, location))
+        vac_id = f"hh_{href.split('/')[-1]}"
+        vacancy_data_constructor(info, salary_src, href, 'hh.ru', employer, location, vac_id)
 
     params_hh['page'] += 1
 
@@ -104,16 +113,8 @@ while True:
         sub_vacancy = vacancy.find_next_sibling('div')
         employer = sub_vacancy.find('a')
         location = sub_vacancy.find('span', {'class': 'f-test-text-company-item-location'}).text.split(' ')[-1]
+        vac_id = f"sj_{href.split('-')[-1].split('.')[0]}"
 
-        vacancies_list.append(vacancy_data_constructor(info, salary_src, href, 'superjob.ru', employer, location))
+        vacancy_data_constructor(info, salary_src, href, 'superjob.ru', employer, location, vac_id)
 
     params_sj['page'] += 1
-
-
-with open('vacancies.json', 'w', encoding='utf-8') as json_file:
-    json.dump(vacancies_list, json_file, ensure_ascii=False)
-
-
-df = pandas.DataFrame(vacancies_list)
-pandas.set_option("display.max_colwidth", 20)
-print(df)
