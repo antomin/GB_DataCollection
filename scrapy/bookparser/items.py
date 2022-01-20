@@ -7,6 +7,11 @@ import scrapy
 
 
 class BookparserItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+    _id = scrapy.Field()
+    url = scrapy.Field()
+    title = scrapy.Field()
+    authors = scrapy.Field()
+    price = scrapy.Field()
+    old_price = scrapy.Field()
+    sale_price = scrapy.Field()
+    rating = scrapy.Field()
