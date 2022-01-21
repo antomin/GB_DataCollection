@@ -13,6 +13,6 @@ if __name__ == '__main__':
     process = CrawlerProcess(settings=crawler_settings)
 
     process.crawl(LabirintruSpider)
-    # process.crawl(Book24ruSpider)
+    process.crawl(Book24ruSpider)
 
     process.start()
