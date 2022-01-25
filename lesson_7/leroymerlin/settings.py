@@ -7,7 +7,7 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "leroymerlin"
+BOT_NAME = "ламинат"
 
 SPIDER_MODULES = ["leroymerlin.spiders"]
 NEWSPIDER_MODULE = "leroymerlin.spiders"
@@ -16,7 +16,7 @@ LOG_ENABLE = True
 LOG_LEVEL = "DEBUG"
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-# USER_AGENT = 'leroymerlin (+http://www.yourdomain.com)'
+USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36"
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
