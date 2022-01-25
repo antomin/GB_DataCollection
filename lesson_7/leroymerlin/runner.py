@@ -4,7 +4,7 @@ from scrapy.settings import Settings
 from leroymerlin import settings
 from leroymerlin.spiders.leroymerlinru import LeroymerlinruSpider
 
-search_str = "обои"
+search_str = "ламинат"
 
 if __name__ == "__main__":
     crawler_settings = Settings()
