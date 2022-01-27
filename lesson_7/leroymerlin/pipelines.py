@@ -7,6 +7,13 @@ class LeroymerlinPipeline:
         return item
 
 
+class LeroymerlinCharPipeline:
+    def process_item(self, item, spider):
+        item["specifications"] = dict(zip(item["char_list"], item["char_values_list"]))
+        del item["char_list"], item["char_values_list"]
+        return item
+
+
 class LeroymerlinImagesPipiline(ImagesPipeline):
     def get_media_requests(self, item, info):
         if item["images"]:

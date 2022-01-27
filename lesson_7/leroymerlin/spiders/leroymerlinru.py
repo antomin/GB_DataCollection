@@ -28,4 +28,6 @@ class LeroymerlinruSpider(scrapy.Spider):
         loader.add_xpath("title", "//h1/text()")
         loader.add_xpath("price", "//uc-pdp-price-view[@slot='primary-price']/meta[@itemprop='price']/@content")
         loader.add_xpath("images", "//img[@alt='product image']/@src")
+        loader.add_xpath("char_list", "//dt[@class='def-list__term']/text()")
+        loader.add_xpath("char_values_list", "//dd[@class='def-list__definition']/text()")
         yield loader.load_item()
