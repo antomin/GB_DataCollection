@@ -4,12 +4,12 @@ from scrapy.settings import Settings
 from leroymerlin import settings
 from leroymerlin.spiders.leroymerlinru import LeroymerlinruSpider
 
-search_str = "ламинат"
+SEARCH = "ламинат"
 
 if __name__ == "__main__":
     crawler_settings = Settings()
     crawler_settings.setmodule(settings)
     process = CrawlerProcess(settings=crawler_settings)
-    process.crawl(LeroymerlinruSpider, search=search_str)
+    process.crawl(LeroymerlinruSpider, search=SEARCH)
 
     process.start()
